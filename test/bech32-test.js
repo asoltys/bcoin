@@ -23,12 +23,12 @@
 
 'use strict';
 
-var assert = require('assert');
-var bech32 = require('../lib/utils/bech32');
-var Address = require('../lib/primitives/address');
+const assert = require('assert');
+const bech32 = require('../lib/utils/bech32');
+const Address = require('../lib/primitives/address');
 
 describe('Bech32', function() {
-  var VALID_CHECKSUM = [
+  const VALID_CHECKSUM = [
     'A12UEL5L',
     'an83characterlonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1tt5tgs',
     'abcdef1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqqxw',
@@ -36,7 +36,7 @@ describe('Bech32', function() {
     'split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w'
   ];
 
-  var VALID_ADDRESS = [
+  const VALID_ADDRESS = [
     [
       'LC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KXFLMTZ',
       Buffer.from([
@@ -86,7 +86,7 @@ describe('Bech32', function() {
     ]
   ];
 
-  var INVALID_ADDRESS = [
+  const INVALID_ADDRESS = [
     'tc1qw508d6qejxtdg4y5r3zarvary0c5xw7kg3g4ty',
     'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5',
     'BC13W508D6QEJXTDG4Y5R3ZARVARY0C5XW7KN40WF2',
@@ -99,29 +99,22 @@ describe('Bech32', function() {
   ];
 
   function fromAddress(hrp, addr) {
-    var dec = bech32.deserialize(addr);
-    var data;
+    let dec = bech32.decode(addr);
 
-    if (dec.hrp !== hrp || dec.data.length < 1 || dec.data[0] > 16)
+    if (dec.hrp !== hrp)
       throw new Error('Invalid bech32 prefix or data length.');
 
-    data = bech32.convert(dec.data, Buffer.allocUnsafe(84), 5, 8, -1, 1);
-
-    if (data.length < 2 || data.length > 40)
-      throw new Error('Invalid witness program size.');
-
-    if (dec.data[0] === 0 && data.length !== 20 && data.length !== 32)
+    if (dec.version === 0 && dec.hash.length !== 20 && dec.hash.length !== 32)
       throw new Error('Malformed witness program.');
 
     return {
-      version: dec.data[0],
-      program: data
+      version: dec.version,
+      program: dec.hash
     };
   }
 
   function toAddress(hrp, version, program) {
-    var data = bech32.convert(program, Buffer.allocUnsafe(65), 8, 5, version, 0);
-    var ret = bech32.serialize(hrp, data);
+    let ret = bech32.encode(hrp, version, program);
 
     fromAddress(hrp, ret);
 
@@ -129,23 +122,23 @@ describe('Bech32', function() {
   }
 
   function createProgram(version, program) {
-    var ver = Buffer.from([version ? version + 0x80 : 0, program.length]);
+    let ver = Buffer.from([version ? version + 0x80 : 0, program.length]);
     return Buffer.concat([ver, program]);
   }
 
-  VALID_CHECKSUM.forEach(function(test) {
-    it('should have valid checksum for ' + test, function() {
-      var ret = bech32.deserialize(test);
+  VALID_CHECKSUM.forEach((test) => {
+    it(`should have valid checksum for ${test}`, () => {
+      let ret = bech32.deserialize(test);
       assert(ret);
     });
   });
 
-  VALID_ADDRESS.forEach(function(test) {
-    var address = test[0];
-    var scriptpubkey = test[1];
-    it('should have valid address for ' + address, function() {
-      var hrp = 'lc';
-      var ret, ok, output, recreate;
+  VALID_ADDRESS.forEach((test) => {
+    let address = test[0];
+    let scriptpubkey = test[1];
+    it(`should have valid address for ${address}`, () => {
+      let hrp = 'lc';
+      let ret, ok, output, recreate;
 
       try {
         ret = fromAddress(hrp, address);
@@ -178,9 +171,9 @@ describe('Bech32', function() {
     });
   });
 
-  INVALID_ADDRESS.forEach(function(test) {
-    it('should have invalid address for ' + test, function() {
-      var ok1, ok2, ok;
+  INVALID_ADDRESS.forEach((test) => {
+    it(`should have invalid address for ${test}`, () => {
+      let ok1, ok2, ok;
 
       try {
         ok1 = fromAddress('lc', test);
@@ -199,17 +192,17 @@ describe('Bech32', function() {
     });
   });
 
-  VALID_ADDRESS.forEach(function(test, i) {
-    var address = test[0];
-    var scriptpubkey = test[1];
+  VALID_ADDRESS.forEach((test, i) => {
+    let address = test[0];
+    let scriptpubkey = test[1];
 
     // TODO: Fix. (wrong length for program)
     // Need to drop old segwit addrs.
     if (i >= 2 && i <= 4)
       return;
 
-    it('should have valid address for ' + address, function() {
-      var ret, ok, output, recreate;
+    it(`should have valid address for ${address}`, () => {
+      let ret, ok, output, recreate;
 
       try {
         ret = Address.fromBech32(address, 'main');
@@ -241,9 +234,9 @@ describe('Bech32', function() {
     });
   });
 
-  INVALID_ADDRESS.forEach(function(test) {
-    it('should have invalid address for ' + test, function() {
-      var ok1, ok2;
+  INVALID_ADDRESS.forEach((test) => {
+    it(`should have invalid address for ${test}`, () => {
+      let ok1, ok2;
 
       try {
         ok1 = Address.fromBech32(test, 'main');

@@ -6,8 +6,8 @@
 
 'use strict';
 
-var assert = require('assert');
-var ec = require('../lib/crypto/ec');
+const assert = require('assert');
+const secp256k1 = require('../lib/crypto/secp256k1');
 
 /*
  * Compression
@@ -20,7 +20,7 @@ var ec = require('../lib/crypto/ec');
  */
 
 function compressScript(script, bw) {
-  var data;
+  let data;
 
   // Attempt to compress the output scripts.
   // We can _only_ ever compress them if
@@ -51,7 +51,7 @@ function compressScript(script, bw) {
   // Saves up to 34 bytes.
   if (script.isPubkey(true)) {
     data = script.code[0].data;
-    if (ec.publicKeyVerify(data)) {
+    if (secp256k1.publicKeyVerify(data)) {
       data = compressKey(data);
       bw.writeU8(3);
       bw.writeBytes(data);
@@ -73,7 +73,7 @@ function compressScript(script, bw) {
  */
 
 function decompressScript(script, br) {
-  var data;
+  let data;
 
   // Decompress the script.
   switch (br.readU8()) {
@@ -112,7 +112,7 @@ function decompressScript(script, br) {
  */
 
 function compressValue(value) {
-  var exp, last;
+  let exp, last;
 
   if (value === 0)
     return 0;
@@ -139,7 +139,7 @@ function compressValue(value) {
  */
 
 function decompressValue(value) {
-  var exp, n, last;
+  let exp, n, last;
 
   if (value === 0)
     return 0;
@@ -172,7 +172,7 @@ function decompressValue(value) {
  */
 
 function compressKey(key) {
-  var out;
+  let out;
 
   switch (key[0]) {
     case 0x02:
@@ -184,7 +184,7 @@ function compressKey(key) {
     case 0x06:
     case 0x07:
       // Compress the key normally.
-      out = ec.publicKeyConvert(key, true);
+      out = secp256k1.publicKeyConvert(key, true);
       // Store the original format (which
       // may be a hybrid byte) in the hi
       // 3 bits so we can restore it later.
@@ -209,8 +209,8 @@ function compressKey(key) {
  */
 
 function decompressKey(key) {
-  var format = key[0] >>> 2;
-  var out;
+  let format = key[0] >>> 2;
+  let out;
 
   assert(key.length === 33);
 
@@ -223,7 +223,7 @@ function decompressKey(key) {
   // low bits so publicKeyConvert
   // actually understands it.
   key[0] &= 0x03;
-  out = ec.publicKeyConvert(key, false);
+  out = secp256k1.publicKeyConvert(key, false);
 
   // Reset the hi bits so as not to
   // mutate the original buffer.

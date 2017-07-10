@@ -1,21 +1,22 @@
 'use strict';
 
-var BN = require('../lib/crypto/bn');
-var util = require('../lib/utils/util');
-var consensus = require('../lib/protocol/consensus');
-var encoding = require('../lib/utils/encoding');
-var TX = require('../lib/primitives/tx');
-var Block = require('../lib/primitives/block');
-var Script = require('../lib/script/script');
-var Opcode = require('../lib/script/opcode');
-var opcodes = Script.opcodes;
-var main, testnet, regtest;
+const BN = require('../lib/crypto/bn');
+const util = require('../lib/utils/util');
+const consensus = require('../lib/protocol/consensus');
+const encoding = require('../lib/utils/encoding');
+const TX = require('../lib/primitives/tx');
+const Block = require('../lib/primitives/block');
+const Script = require('../lib/script/script');
+const Opcode = require('../lib/script/opcode');
+const opcodes = Script.opcodes;
+
+let main, testnet, regtest;
 
 function createGenesisBlock(options) {
-  var flags = options.flags;
-  var script = options.script;
-  var reward = options.reward;
-  var tx, block;
+  let flags = options.flags;
+  let script = options.script;
+  let reward = options.reward;
+  let tx, block;
 
   if (!flags) {
     flags = Buffer.from(
@@ -81,42 +82,21 @@ main = createGenesisBlock({
   version: 1,
   ts: 1317972665,
   bits: 504365040,
-  nonce: 2084524493,
-  flags: new Buffer(
-    'NY Times 05/Oct/2011 Steve Jobs, Apple’s Visionary, Dies at 56',
-    'ascii'),
-  script: Script.fromArray([
-    new Buffer('040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9', 'hex'),
-    opcodes.OP_CHECKSIG
-  ])
+  nonce: 2084524493
 });
 
 testnet = createGenesisBlock({
-  ts: 1486949366,
-  nonce: 293345,
-  bits: 0x1e0ffff0,
   version: 1,
-  flags: new Buffer(
-    'NY Times 05/Oct/2011 Steve Jobs, Apple’s Visionary, Dies at 56',
-    'ascii'),
-  script: Script.fromArray([
-    new Buffer('040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9', 'hex'),
-    opcodes.OP_CHECKSIG
-  ])
+  ts: 1486949366,
+  bits: 0x1e0ffff0,
+  nonce: 293345
 });
 
 regtest = createGenesisBlock({
-  ts: 1296688602,
-  nonce: 0,
-  bits: 0x207fffff,
   version: 1,
-  flags: new Buffer(
-    'NY Times 05/Oct/2011 Steve Jobs, Apple’s Visionary, Dies at 56',
-    'ascii'),
-  script: Script.fromArray([
-    new Buffer('040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9', 'hex'),
-    opcodes.OP_CHECKSIG
-  ])
+  ts: 1296688602,
+  bits: 0x207fffff,
+  nonce: 0
 });
 
 util.log(main);

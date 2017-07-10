@@ -1,44 +1,44 @@
 'use strict';
 
-var fs = require('fs');
-var assert = require('assert');
-var Bloom = require('../lib/utils/bloom');
-var Block = require('../lib/primitives/block');
-var Headers = require('../lib/primitives/headers');
-var MerkleBlock = require('../lib/primitives/merkleblock');
-var CoinView = require('../lib/coins/coinview');
-var Coin = require('../lib/primitives/coin');
-var Coins = require('../lib/coins/coins');
-var UndoCoins = require('../lib/coins/undocoins');
-var consensus = require('../lib/protocol/consensus');
-var Script = require('../lib/script/script');
-var encoding = require('../lib/utils/encoding');
-var bip152 = require('../lib/net/bip152');
+const fs = require('fs');
+const assert = require('assert');
+const Bloom = require('../lib/utils/bloom');
+const Block = require('../lib/primitives/block');
+const Headers = require('../lib/primitives/headers');
+const MerkleBlock = require('../lib/primitives/merkleblock');
+const CoinView = require('../lib/coins/coinview');
+const Coin = require('../lib/primitives/coin');
+const Coins = require('../lib/coins/coins');
+const UndoCoins = require('../lib/coins/undocoins');
+const consensus = require('../lib/protocol/consensus');
+const Script = require('../lib/script/script');
+const encoding = require('../lib/utils/encoding');
+const bip152 = require('../lib/net/bip152');
 
-var block300025 = require('./data/block300025.json');
-var cmpct1 = fs.readFileSync(__dirname + '/data/compactblock.hex', 'utf8');
-var cmpct2 = fs.readFileSync(__dirname + '/data/cmpct2', 'utf8');
-var cmpct2block = fs.readFileSync(__dirname + '/data/cmpct2.bin');
+const block300025 = require('./data/block300025.json');
+const cmpct2block = fs.readFileSync(`${__dirname}/data/cmpct2.bin`);
+
+let cmpct1 = fs.readFileSync(`${__dirname}/data/compactblock.hex`, 'utf8');
+let cmpct2 = fs.readFileSync(`${__dirname}/data/cmpct2`, 'utf8');
 
 cmpct1 = cmpct1.trim().split('\n');
 cmpct2 = cmpct2.trim();
 
 function applyUndo(block, undo) {
-  var view = new CoinView();
-  var i, j, tx, input, prev, coins;
+  let view = new CoinView();
 
-  for (i = block.txs.length - 1; i > 0; i--) {
-    tx = block.txs[i];
+  for (let i = block.txs.length - 1; i > 0; i--) {
+    let tx = block.txs[i];
 
-    for (j = tx.inputs.length - 1; j >= 0; j--) {
-      input = tx.inputs[j];
-      prev = input.prevout.hash;
+    for (let j = tx.inputs.length - 1; j >= 0; j--) {
+      let input = tx.inputs[j];
+      let prev = input.prevout.hash;
 
       if (!view.has(prev)) {
         assert(!undo.isEmpty());
 
         if (undo.top().height === -1) {
-          coins = new Coins();
+          let coins = new Coins();
           coins.hash = prev;
           coins.coinbase = false;
           view.add(coins);
@@ -55,7 +55,7 @@ function applyUndo(block, undo) {
 }
 
 describe('Block', function() {
-  var mblock, raw, block, raw2;
+  let mblock, raw, block, raw2;
 
   mblock = new MerkleBlock({
     version: 2,
@@ -99,8 +99,8 @@ describe('Block', function() {
 
   this.timeout(10000);
 
-  it('should parse partial merkle tree', function() {
-    var tree;
+  it('should parse partial merkle tree', () => {
+    let tree;
 
     assert(!mblock.verifyPOW());
     assert(mblock.verifyBody());
@@ -121,41 +121,40 @@ describe('Block', function() {
       'ec8c51de3170301430ec56f6703533d9ea5b05c6fa7068954bcb90eed8c2ee5c');
   });
 
-  it('should decode/encode with parser/framer', function() {
-    var b = MerkleBlock.fromRaw(raw, 'hex');
+  it('should decode/encode with parser/framer', () => {
+    let b = MerkleBlock.fromRaw(raw, 'hex');
     assert.equal(b.toRaw().toString('hex'), raw);
     assert.equal(raw, raw2);
   });
 
   it('should be verifiable', function() {
-    var b = MerkleBlock.fromRaw(raw, 'hex');
+    let b = MerkleBlock.fromRaw(raw, 'hex');
     assert(b.verifyBody());
     assert(!b.verify());
   });
 
-  it('should be serialized and deserialized and still verify', function() {
-    var raw = mblock.toRaw();
-    var b = MerkleBlock.fromRaw(raw);
+  it('should be serialized and deserialized and still verify', () => {
+    let raw = mblock.toRaw();
+    let b = MerkleBlock.fromRaw(raw);
     assert.deepEqual(b.toRaw(), raw);
     assert(b.verifyBody());
     assert(!b.verify());
   });
 
-  it('should be jsonified and unjsonified and still verify', function() {
-    var raw = mblock.toJSON();
-    var b = MerkleBlock.fromJSON(raw);
+  it('should be jsonified and unjsonified and still verify', () => {
+    let raw = mblock.toJSON();
+    let b = MerkleBlock.fromJSON(raw);
     assert.deepEqual(b.toJSON(), raw);
     assert(b.verifyBody());
     assert(!b.verify());
   });
 
-  it('should calculate reward properly', function() {
-    var height = 0;
-    var total = 0;
-    var reward;
+  it('should calculate reward properly', () => {
+    let height = 0;
+    let total = 0;
 
     for (;;) {
-      reward = consensus.getReward(height, 210000);
+      let reward = consensus.getReward(height, 210000);
       assert(reward <= consensus.COIN * 50);
       total += reward;
       if (reward === 0)
@@ -167,7 +166,7 @@ describe('Block', function() {
     assert.equal(total, 2099999997690000);
   });
 
-  it('should parse JSON', function() {
+  it('should parse JSON', () => {
     block = Block.fromJSON(block300025);
     assert.equal(block.hash('hex'),
       '8cc72c02a958de5a8b35a23bb7e3bced8bf840cc0a4e1c820000000000000000');
@@ -176,8 +175,8 @@ describe('Block', function() {
     assert.equal(block.merkleRoot, block.createMerkleRoot('hex'));
   });
 
-  it('should create a merkle block', function() {
-    var filter, item1, item2, mblock2;
+  it('should create a merkle block', () => {
+    let filter, item1, item2, mblock2;
 
     filter = Bloom.fromRate(1000, 0.01, Bloom.flags.NONE);
 
@@ -195,18 +194,18 @@ describe('Block', function() {
     assert.deepEqual(mblock2.toRaw(), mblock.toRaw());
   });
 
-  it('should verify a historical block', function() {
-    var view = new CoinView();
-    var height = block300025.height;
-    var sigops = 0;
-    var reward = 0;
-    var i, j, tx, input, coin, flags;
+  it('should verify a historical block', () => {
+    let view = new CoinView();
+    let height = block300025.height;
+    let sigops = 0;
+    let reward = 0;
+    let flags;
 
-    for (i = 1; i < block300025.txs.length; i++) {
-      tx = block300025.txs[i];
-      for (j = 0; j < tx.inputs.length; j++) {
-        input = tx.inputs[j];
-        coin = Coin.fromJSON(input.coin);
+    for (let i = 1; i < block300025.txs.length; i++) {
+      let tx = block300025.txs[i];
+      for (let j = 0; j < tx.inputs.length; j++) {
+        let input = tx.inputs[j];
+        let coin = Coin.fromJSON(input.coin);
         view.addCoin(coin);
       }
     }
@@ -220,10 +219,10 @@ describe('Block', function() {
 
     flags = Script.flags.VERIFY_P2SH | Script.flags.VERIFY_DERSIG;
 
-    for (i = 1; i < block.txs.length; i++) {
-      tx = block.txs[i];
+    for (let i = 1; i < block.txs.length; i++) {
+      let tx = block.txs[i];
       assert(tx.isSane());
-      assert(tx.checkInputs(view, height));
+      assert(tx.verifyInputs(view, height));
       assert(tx.verify(view, flags));
       assert(!tx.hasWitness());
       sigops += tx.getSigopsCost(view, flags);
@@ -238,38 +237,38 @@ describe('Block', function() {
     assert.equal(reward, block.txs[0].outputs[0].value);
   });
 
-  it('should fail with a bad merkle root', function() {
-    var block2 = new Block(block);
-    var ret = {};
+  it('should fail with a bad merkle root', () => {
+    let block2 = new Block(block);
+    let reason;
     block2.merkleRoot = encoding.NULL_HASH;
     block2.refresh();
     assert(!block2.verifyPOW());
-    assert(!block2.verifyBody(ret));
+    [, reason] = block2.checkBody();
+    assert.equal(reason, 'bad-txnmrklroot');
     assert(!block2.verify());
-    assert.equal(ret.reason, 'bad-txnmrklroot');
     block2.merkleRoot = block.merkleRoot;
     block2.refresh();
     assert(block2.verifyBody());
     assert(!block2.verify());
   });
 
-  it('should fail on merkle block with a bad merkle root', function() {
-    var mblock2 = new MerkleBlock(mblock);
-    var ret = {};
+  it('should fail on merkle block with a bad merkle root', () => {
+    let mblock2 = new MerkleBlock(mblock);
+    let reason;
     mblock2.merkleRoot = encoding.NULL_HASH;
     mblock2.refresh();
     assert(!mblock2.verifyPOW());
-    assert(!mblock2.verifyBody(ret));
+    [, reason] = mblock2.checkBody();
+    assert.equal(reason, 'bad-txnmrklroot');
     assert(!mblock2.verify());
-    assert.equal(ret.reason, 'bad-txnmrklroot');
     mblock2.merkleRoot = mblock.merkleRoot;
     mblock2.refresh();
     assert(mblock2.verifyBody());
     assert(!mblock2.verify());
   });
 
-  it('should fail with a low target', function() {
-    var block2 = new Block(block);
+  it('should fail with a low target', () => {
+    let block2 = new Block(block);
     block2.bits = 403014710;
     block2.refresh();
     assert(!block2.verifyPOW());
@@ -281,28 +280,28 @@ describe('Block', function() {
     assert(!block2.verify());
   });
 
-  it('should fail on duplicate txs', function() {
-    var block2 = new Block(block);
-    var ret = {};
+  it('should fail on duplicate txs', () => {
+    let block2 = new Block(block);
+    let reason;
     block2.txs.push(block2.txs[block2.txs.length - 1]);
     block2.refresh();
-    assert(!block2.verifyBody(ret));
-    assert.equal(ret.reason, 'bad-txns-duplicate');
+    [, reason] = block2.checkBody();
+    assert.equal(reason, 'bad-txns-duplicate');
   });
 
   it('should verify with headers', function() {
-    var headers = new Headers(block);
+    let headers = new Headers(block);
     assert(!headers.verifyPOW());
     assert(headers.verifyBody());
     assert(!headers.verify());
   });
 
-  it('should handle compact block', function() {
-    var block = Block.fromRaw(cmpct1[1], 'hex');
-    var cblock1 = bip152.CompactBlock.fromRaw(cmpct1[0], 'hex');
-    var cblock2 = bip152.CompactBlock.fromBlock(block, false, cblock1.keyNonce);
-    var map = {};
-    var i, tx, mempool, result;
+  it('should handle compact block', () => {
+    let block = Block.fromRaw(cmpct1[1], 'hex');
+    let cblock1 = bip152.CompactBlock.fromRaw(cmpct1[0], 'hex');
+    let cblock2 = bip152.CompactBlock.fromBlock(block, false, cblock1.keyNonce);
+    let map = new Map();
+    let i, tx, mempool, result;
 
     assert(cblock1.init());
 
@@ -311,16 +310,11 @@ describe('Block', function() {
 
     for (i = 0; i < block.txs.length; i++) {
       tx = block.txs[i];
-      map[tx.hash('hex')] = tx;
+      map.set(tx.hash('hex'), { tx: tx });
     }
 
     mempool = {
-      getSnapshot: function() {
-        return Object.keys(map);
-      },
-      getTX: function(hash) {
-        return map[hash];
-      }
+      map: map
     };
 
     assert.equal(cblock1.sid(block.txs[1].hash()), 125673511480291);
@@ -336,33 +330,25 @@ describe('Block', function() {
       block.toRaw().toString('hex'));
   });
 
-  it('should handle half-full compact block', function() {
-    var block = Block.fromRaw(cmpct1[1], 'hex');
-    var cblock1 = bip152.CompactBlock.fromRaw(cmpct1[0], 'hex');
-    var cblock2 = bip152.CompactBlock.fromBlock(block, false, cblock1.keyNonce);
-    var map = {};
-    var i, tx, mid, keys, mempool, result, req, res;
+  it('should handle half-full compact block', () => {
+    let block = Block.fromRaw(cmpct1[1], 'hex');
+    let cblock1 = bip152.CompactBlock.fromRaw(cmpct1[0], 'hex');
+    let cblock2 = bip152.CompactBlock.fromBlock(block, false, cblock1.keyNonce);
+    let map = new Map();
+    let i, tx, mempool, result, req, res;
 
     assert(cblock1.init());
 
     assert.equal(cblock1.toRaw().toString('hex'), cmpct1[0]);
     assert.equal(cblock2.toRaw().toString('hex'), cmpct1[0]);
 
-    for (i = 0; i < block.txs.length; i++) {
+    for (i = 0; i < block.txs.length >>> 1; i++) {
       tx = block.txs[i];
-      map[tx.hash('hex')] = tx;
+      map.set(tx.hash('hex'), { tx: tx });
     }
 
-    mid = block.txs.length >>> 1;
-    keys = Object.keys(map).slice(0, mid);
-
     mempool = {
-      getSnapshot: function() {
-        return keys;
-      },
-      getTX: function(hash) {
-        return map[hash];
-      }
+      map: map
     };
 
     assert.equal(cblock1.sid(block.txs[1].hash()), 125673511480291);
@@ -392,12 +378,12 @@ describe('Block', function() {
       block.toRaw().toString('hex'));
   });
 
-  it('should handle compact block', function() {
-    var block = Block.fromRaw(cmpct2block);
-    var cblock1 = bip152.CompactBlock.fromRaw(cmpct2, 'hex');
-    var cblock2 = bip152.CompactBlock.fromBlock(block, false, cblock1.keyNonce);
-    var map = {};
-    var i, tx, result, mempool;
+  it('should handle compact block', () => {
+    let block = Block.fromRaw(cmpct2block);
+    let cblock1 = bip152.CompactBlock.fromRaw(cmpct2, 'hex');
+    let cblock2 = bip152.CompactBlock.fromBlock(block, false, cblock1.keyNonce);
+    let map = new Map();
+    let i, tx, result, mempool;
 
     assert(cblock1.init());
 
@@ -406,16 +392,11 @@ describe('Block', function() {
 
     for (i = 0; i < block.txs.length; i++) {
       tx = block.txs[i];
-      map[tx.hash('hex')] = tx;
+      map.set(tx.hash('hex'), { tx: tx });
     }
 
     mempool = {
-      getSnapshot: function() {
-        return Object.keys(map);
-      },
-      getTX: function(hash) {
-        return map[hash];
-      }
+      map: map
     };
 
     result = cblock1.fillMempool(false, mempool);
@@ -429,33 +410,25 @@ describe('Block', function() {
       block.toRaw().toString('hex'));
   });
 
-  it('should handle half-full compact block', function() {
-    var block = Block.fromRaw(cmpct2block);
-    var cblock1 = bip152.CompactBlock.fromRaw(cmpct2, 'hex');
-    var cblock2 = bip152.CompactBlock.fromBlock(block, false, cblock1.keyNonce);
-    var map = {};
-    var i, tx, mid, keys, mempool, result, req, res;
+  it('should handle half-full compact block', () => {
+    let block = Block.fromRaw(cmpct2block);
+    let cblock1 = bip152.CompactBlock.fromRaw(cmpct2, 'hex');
+    let cblock2 = bip152.CompactBlock.fromBlock(block, false, cblock1.keyNonce);
+    let map = new Map();
+    let i, tx, mempool, result, req, res;
 
     assert(cblock1.init());
 
     assert.equal(cblock1.toRaw().toString('hex'), cmpct2);
     assert.equal(cblock2.toRaw().toString('hex'), cmpct2);
 
-    for (i = 0; i < block.txs.length; i++) {
+    for (i = 0; i < block.txs.length >>> 1; i++) {
       tx = block.txs[i];
-      map[tx.hash('hex')] = tx;
+      map.set(tx.hash('hex'), { tx: tx });
     }
 
-    mid = block.txs.length >>> 1;
-    keys = Object.keys(map).slice(0, mid);
-
     mempool = {
-      getSnapshot: function() {
-        return keys;
-      },
-      getTX: function(hash) {
-        return map[hash];
-      }
+      map: map
     };
 
     result = cblock1.fillMempool(false, mempool);
@@ -481,15 +454,15 @@ describe('Block', function() {
       block.toRaw().toString('hex'));
   });
 
-  it('should count sigops for block 928828 (testnet)', function() {
-    var blockRaw = fs.readFileSync(__dirname + '/data/block928828.raw');
-    var undoRaw = fs.readFileSync(__dirname + '/data/undo928828.raw');
-    var block = Block.fromRaw(blockRaw);
-    var undo = UndoCoins.fromRaw(undoRaw);
-    var view = applyUndo(block, undo);
-    var sigops = 0;
-    var flags = Script.flags.VERIFY_P2SH | Script.flags.VERIFY_WITNESS;
-    var i, tx;
+  it('should count sigops for block 928828 (testnet)', () => {
+    let blockRaw = fs.readFileSync(`${__dirname}/data/block928828.raw`);
+    let undoRaw = fs.readFileSync(`${__dirname}/data/undo928828.raw`);
+    let block = Block.fromRaw(blockRaw);
+    let undo = UndoCoins.fromRaw(undoRaw);
+    let view = applyUndo(block, undo);
+    let sigops = 0;
+    let flags = Script.flags.VERIFY_P2SH | Script.flags.VERIFY_WITNESS;
+    let i, tx;
 
     for (i = 0; i < block.txs.length; i++) {
       tx = block.txs[i];
@@ -500,15 +473,15 @@ describe('Block', function() {
     assert.equal(block.getWeight(), 2481560);
   });
 
-  it('should count sigops for block 928927 (testnet)', function() {
-    var blockRaw = fs.readFileSync(__dirname + '/data/block928927.raw');
-    var undoRaw = fs.readFileSync(__dirname + '/data/undo928927.raw');
-    var block = Block.fromRaw(blockRaw);
-    var undo = UndoCoins.fromRaw(undoRaw);
-    var view = applyUndo(block, undo);
-    var sigops = 0;
-    var flags = Script.flags.VERIFY_P2SH | Script.flags.VERIFY_WITNESS;
-    var i, tx;
+  it('should count sigops for block 928927 (testnet)', () => {
+    let blockRaw = fs.readFileSync(`${__dirname}/data/block928927.raw`);
+    let undoRaw = fs.readFileSync(`${__dirname}/data/undo928927.raw`);
+    let block = Block.fromRaw(blockRaw);
+    let undo = UndoCoins.fromRaw(undoRaw);
+    let view = applyUndo(block, undo);
+    let sigops = 0;
+    let flags = Script.flags.VERIFY_P2SH | Script.flags.VERIFY_WITNESS;
+    let i, tx;
 
     for (i = 0; i < block.txs.length; i++) {
       tx = block.txs[i];
@@ -519,15 +492,15 @@ describe('Block', function() {
     assert.equal(block.getWeight(), 3992391);
   });
 
-  it('should count sigops for block 1087400 (testnet)', function() {
-    var blockRaw = fs.readFileSync(__dirname + '/data/block1087400.raw');
-    var undoRaw = fs.readFileSync(__dirname + '/data/undo1087400.raw');
-    var block = Block.fromRaw(blockRaw);
-    var undo = UndoCoins.fromRaw(undoRaw);
-    var view = applyUndo(block, undo);
-    var sigops = 0;
-    var flags = Script.flags.VERIFY_P2SH | Script.flags.VERIFY_WITNESS;
-    var i, tx;
+  it('should count sigops for block 1087400 (testnet)', () => {
+    let blockRaw = fs.readFileSync(`${__dirname}/data/block1087400.raw`);
+    let undoRaw = fs.readFileSync(`${__dirname}/data/undo1087400.raw`);
+    let block = Block.fromRaw(blockRaw);
+    let undo = UndoCoins.fromRaw(undoRaw);
+    let view = applyUndo(block, undo);
+    let sigops = 0;
+    let flags = Script.flags.VERIFY_P2SH | Script.flags.VERIFY_WITNESS;
+    let i, tx;
 
     for (i = 0; i < block.txs.length; i++) {
       tx = block.txs[i];
